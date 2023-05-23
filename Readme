@@ -1,0 +1,7 @@
+En el siguiente proyecto buscamos controlar la temperatura de la placa de abajo de una plancha domiciliaria, utilizando el pic 16f887.
+La idea es prender el equipo y que el usuario eliga la temperatura que desea alcanzar en la plancha.
+Coloca este número por el teclado matricial 4x4 (setea la temperatura), y por mediante el PWM del pic controlamos la alimentación la plancha, y al llegar a la temperatura deseada esta se mantiene hasta que usuario apriete el signo "igual" del teclado. Cuando lo aprieta la temperatura decrementa ya que se deja de alimentar a la plancha.
+La temperatura se sensara por un termopar donde los valores serán digitalizados por el ADC del pic.
+Estos valores tambien será mostrados por computadora y se graficara como esta varía. Debe alcanzar el valor seteado y mantenerse, y al finalizar decrecer.
+
+ 
