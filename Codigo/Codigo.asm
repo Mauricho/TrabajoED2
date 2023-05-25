@@ -91,7 +91,22 @@ RSI
 	    MOVLW		0X0F		
 	    ANDWF		PORTB,W
 	    
-	    ADDWF		TECLADO4X4,F ;Valores concatenados para buscar en la tabla
+	    ADDWF		TECLADO4X4,F ;Valores concatenados para buscar en la tabla, en esta variable se guardo lo que apreto el usuario
+
+;;*********************Swap de variables para imprimir correctamente en LCD*****************************    
+;	    MOVLW		0X0B				;Si estamos con el tercer digito CONT_TEMP_LCD=0x0B
+;	    XORWF		CONT_TEMP_LCD,W
+;	    BTFSC		STATUS,Z  	    
+;	    CALL		MOV3_DIG
+;	    
+;	    MOVLW		0X0C				;Si estamos con el segundo digito CONT_TEMP_LCD=0x0C
+;	    XORWF		CONT_TEMP_LCD,W
+;	    BTFSC		STATUS,Z  	    
+;	    CALL		MOV2_DIG
+;	    	    
+;	    MOVF		TECLADO4X4,W		;Caso CONT_TEMP_LCD = D
+;	    MOVWF		LCD_0D	    	    
+;;*****************************Fin swap*********************************
 	    
 	    CLRF		CONT_TECL	;Contador que me permite recorrer la tabla y preguntar para cada caso
 	    
@@ -111,8 +126,8 @@ BUSCA_TECLA
 	    MOVLW		.16
 	    MOVWF		CONT_TECL
 	    
-DIRECC_IMPR	   
-	    MOVF		CONT_TEMP_LCD,W	;Movemos el contenido cont-temp-lcd a W, es la dirección a mostrar en la LCD
+DIRECC_IMPR	   		    
+	    MOVF		CONT_TEMP_LCD,W ;Movemos el contenido cont-temp-lcd a W, es la dirección a mostrar en la LCD
 	    MOVWF		DIR_LCD
 	    CALL		DIRECCION_DDRAM
 	    
@@ -205,7 +220,15 @@ IMPRIM_NUM	MOVLW		0X30
 		CALL		CARACTER		;Imprimimos unidades
 
 		RETURN
-	    	    
+		
+;****	    Subrutina para imprimir correctamente en la LCD          ********
+;MOV3_DIG   MOVF		LCD_0C,W		;Caso CONT_TEMP_LCD = B
+;	    MOVWF		LCD_0B
+;	    
+;MOV2_DIG   MOVF		LCD_0D,W		;Caso CONT_TEMP_LCD = C
+;	    MOVWF		LCD_0C	   
+;	    RETURN	
+	    
 ;*********************** Subrutinas de Tiempo *************************
 	    include <SubrutinasTiempo.inc>    
 ;*********************** Subrutinas de Funciones LCD ******************	    

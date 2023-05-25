@@ -33,5 +33,14 @@ TECLADO4X4  EQU	0X2E
 ; Lo utilizamos para el teclado 4x4 como contador, para recorrer todos los valores de la tabla
 CONT_TECL   EQU	0X2F
 
-; Variable que nos permite ir recorriendo las distintas posiciones del LCD para guardar el valor seteado
+; Variable que nos permite ir recorriendo las distintas posiciones del LCD para mostrar el valor seteado
 CONT_TEMP_LCD	EQU	0X28 ; Empiezo en 0x0D y lo hago hasta 0x0A
+
+; Variable para mostrar numero en LCD posicion 0x0D
+LCD_0D	EQU 0x21
+	
+; Variable para mostrar numero en LCD posicion 0x0C
+LCD_0C	EQU 0X22
+
+; Variable para mostrar numero en LCD posicion 0x0B
+LCD_0B	EQU 0X24	
