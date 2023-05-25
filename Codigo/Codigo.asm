@@ -71,7 +71,8 @@ INICIO	    CLRF 		PORTA
 	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
 ;*******************Rutina Servicio Interrupción***********************    
 RSI	    
-	    CALL		T25MS	    ;Elimino rebotes
+;	    CALL		T25MS	    ;Elimino rebotes
+	    CALL		T20MS
 	    
 	    MOVLW		0XF0
 	    ANDWF		PORTB,W
@@ -141,7 +142,8 @@ DIRECC_IMPR
 	    GOTO		$-3	    ;De esta forma evito que entre permanentemente al caso prohibido de forma permanente
 					    ;NO queda permanentemente interrumpido
 					    
-	    CALL		T25MS	    ;Elimino rebotes
+;	    CALL		T25MS	    ;Elimino rebotes
+	    CALL		T20MS
 	    
 	    BSF			STATUS,RP0  ;Banco1
 	    

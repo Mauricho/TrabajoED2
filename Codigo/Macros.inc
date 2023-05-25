@@ -40,6 +40,12 @@ SUBT25MS	MACRO
 T25MS		SUBT3V	.3,.47,.25
 		RETURN
 		ENDM	
+		
+; Macro para llamar a la subrutinas de tiempo de 20 mS:
+SUBT20MS	MACRO
+T20MS		SUBT2V	.14,.196
+		RETURN
+		ENDM
 	    
 ; Macro para LCD
 LCD_MACRO   MACRO

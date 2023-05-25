@@ -51,5 +51,5 @@ T120AVO	    SUBT2V  .7,.157
 	    
 	    SUBT25MS    ;Se agrega porque el programa la llama mediante una macro que utiliza T25MS
 			; entonces aquí llamamos a la macro que implementa el T25MS
-
+	    SUBT20MS
 
