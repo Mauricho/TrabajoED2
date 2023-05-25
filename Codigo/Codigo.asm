@@ -3,7 +3,7 @@
 ; tecla deberá interrumpir y desplegar en la LCD (conectada al puerto C) 
 ; el número de la tecla que se está apretando (en hexadecimal)
 ; Las cadenas de la LCD serán:
-; "Temp. max:    °C"
+; "Temp. max: xxx°C"
 ; "Temp.:        °C"
 	    
 	    LIST P=16F887
@@ -46,14 +46,14 @@ INICIO	    CLRF 		PORTA
 	    MOVWF		TRISB	     ;"Debo modificar antes al TRISB que las resistencia de elevación" 
 	    
 	    CLRF		TRISC	     ;PuertoC=Salida
-	    CLRF		TRISD
-	    BCF			TRISA,0
-	    BCF			TRISA,1
 	   
 	    BCF			OPTION_REG,7	;Habilitamos resistencias pull-up  
 	    COMF		IOCB,F	     ; Habilitamos todos los pines del puerto B como fuente de interrupción 
 	    
 	    BCF			STATUS,RP0  ;Bank0
+	    
+	    MOVLW		0X0D		;La primera dirección donde se muestra el numero es la LCD es 0x0D    
+	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 	    
 	    include<Imprime32CaractLCD.inc>	    
 	    
@@ -68,9 +68,10 @@ INICIO	    CLRF 		PORTA
 	    BSF			INTCON,GIE  ;Habilitamos las interrupciones globales
 	    
 ;***********************Programa Principal*****************************    
-	    
+	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
 ;*******************Rutina Servicio Interrupción***********************    
-RSI	    CALL		T25MS	    ;Elimino rebotes
+RSI	    
+	    CALL		T25MS	    ;Elimino rebotes
 	    
 	    MOVLW		0XF0
 	    ANDWF		PORTB,W
@@ -111,7 +112,7 @@ BUSCA_TECLA
 	    MOVWF		CONT_TECL
 	    
 DIRECC_IMPR	   
-	    MOVLW		0X0A		;Donde queremos imprimir se lo pasamos al registro DIR_LCD
+	    MOVF		CONT_TEMP_LCD,W	;Movemos el contenido cont-temp-lcd a W, es la dirección a mostrar en la LCD
 	    MOVWF		DIR_LCD
 	    CALL		DIRECCION_DDRAM
 	    
@@ -136,6 +137,16 @@ DIRECC_IMPR
 	    
 	    BCF			STATUS,RP0   ;Banco0
 	    
+	    DECF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
+	    MOVLW		0X0A		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
+	    XORWF		CONT_TEMP_LCD,W
+	    BTFSS		STATUS,Z
+	    GOTO		IMP_NEXT_DIR	    ;Imprimimos en la próxima dirección de la LCD
+	    
+	    MOVLW		0X0D		
+	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
+	    
+IMP_NEXT_DIR	    
 	    MOVF		PORTB,W    
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    
