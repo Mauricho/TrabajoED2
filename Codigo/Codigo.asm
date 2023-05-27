@@ -5,6 +5,8 @@
 ; Las cadenas de la LCD serán:
 ; "Temp. max: xxx°C"
 ; "Temp.:        °C"
+; Deberá desplegar la temperatura utilizando el sensor LM35 con una resolución de 0,25 °C,
+; la entrada del sensor será RE2/AN7
 	    
 	    LIST P=16F887
 	    
@@ -38,6 +40,8 @@ INICIO	    CLRF 		PORTA
 	    BSF			STATUS,RP0
 	    BSF			STATUS,RP1  ;Bank3
 	
+	    MOVLW		B'10001000' ;Entrada analógica por AN7 y AN3 (VREF+)
+	    MOVWF 		ANSEL
 	    CLRF		ANSELH
 	    
 	    BCF			STATUS,RP1  ;Bank1
@@ -46,16 +50,37 @@ INICIO	    CLRF 		PORTA
 	    MOVWF		TRISB	     ;"Debo modificar antes al TRISB que las resistencia de elevación" 
 	    
 	    CLRF		TRISC	     ;PuertoC=Salida
-	   
-	    BCF			OPTION_REG,7	;Habilitamos resistencias pull-up  
+;**********************************************************************
+;   Configuramos el Timer0 con Option_Reg
+	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de máquina, flancos de bajada, prescaler: 1:64 
+	    MOVWF		OPTION_REG
+
 	    COMF		IOCB,F	     ; Habilitamos todos los pines del puerto B como fuente de interrupción 
 	    
-	    BCF			STATUS,RP0  ;Bank0
+	    MOVLW		B'00010000' ;Ajuste a la izq., Vref-=Vss, Vref+=An3
+	    MOVWF		ADCON1
+	      
+;**********************************************************************  	    
+	    BCF			STATUS,RP0  ;Bank0 
+	    
+	    include<Imprime32CaractLCD.inc>	    
+;Variables:	    
+	    CLRF		CONT_T0		; Limpiamos el registro que utiliza TMR0
 	    
 	    MOVLW		0X0D		;La primera dirección donde se muestra el numero es la LCD es 0x0D    
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
+;**********************************************************************
+;Configuración del TMR0: Cada 0.124 [S] estoy interrumpiendo
+	    MOVLW		.131	      ;Timer cuenta a 125 * 64 prescaler = 8000
+	    MOVWF		TMR0	      ;256-125=131, el número que nosotros queremos es 125!
 	    
-	    include<Imprime32CaractLCD.inc>	    
+	    MOVLW		.62	      ;Lo cambie para que sean 500000 de ciclos
+	    MOVWF		CONT5	      ;Contador cargado con 62
+;Tiempo Muestreo = 125 * 64 (prescaler) * 62 = 496000 (aprox. 500000)
+;	      256 - 125 = 131 (TMR0, lo que se debe cargar) 
+;**********************************************************************
+	    MOVLW		B'11011101'  ; Reloj ADC = RC interno, canal analógico = AN7(Fuente de tensión), no inicia, AD encendido
+	    MOVWF		ADCON0
 	    
 ; Necesitamos guardar el valor de los puertos
 	    MOVF		PORTB,W		;Estamos leyendo el puerto
@@ -65,12 +90,112 @@ INICIO	    CLRF 		PORTA
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    BSF			INTCON,RBIE ;Habilitamos las interrupciones por el puertoB
 	    
+	    BCF			INTCON,T0IF ;Bajamos la bandera de TMR0 antes de dar los permisos
+	    BSF			INTCON,T0IE ;Habilitamos las interrupciones por TMR0
+	    
 	    BSF			INTCON,GIE  ;Habilitamos las interrupciones globales
 	    
 ;***********************Programa Principal*****************************    
 	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
 ;*******************Rutina Servicio Interrupción***********************    
-RSI	    
+RSI	    BTFSS		INTCON,T0IF
+	    GOTO		FUE_INT_CH    ;Solución por interrupcion en RB0
+	    
+	    DECFSZ		CONT5,F
+	    GOTO		BAJA_BANDERA	;Bajo la bandera hasta cumplir los 62 veces
+	    
+	    BSF			ADCON0,1	;Inicia la Conversión Analógica Digital
+	    
+	    MOVLW		.62
+	    MOVWF		CONT5		;Vuelvo a cargar CONT5 con 62
+	    
+	    INCF		CONT_T0		;Ver esta instrucción!!!!
+	    
+	    BTFSC		ADCON0,1	;Ya termino la Conversión Analógica Digital?
+	    GOTO		$-1
+	    
+	    MOVF		ADRESH,W    ;El resultado del ADC lo paso a W 
+	    MOVWF		DECIMAL	    ;Paso de binario a decimal
+	    CALL		BIN_A_DEC
+	    
+	    MOVLW		0X48	    ;Donde queremos imprimir se lo pasamos al registro DIR_LCD
+	    MOVWF		DIR_LCD
+	    
+	    CALL		IMPRIM_NUM ;Imprime la parte alta del resultado de la Conversión A-D
+	    
+	    BSF			STATUS,RP0  ; Bank1
+	    
+	    MOVF		ADRESL,W    ;Guardamos la parte baja del resultado en W
+	    
+	    BCF			STATUS,RP0  ; Bank 0
+	    
+	    MOVWF		ADL	     ;Guardamos la parte baja del resultado en ADL
+	    
+	    CLRW			      ;Caso ADRESL = 00
+	    XORWF		ADL,W
+	    BTFSS		STATUS,Z
+	    
+	    GOTO		LM35FUE01		
+	    
+	    MOVLW		'.'
+	    CALL		CARACTER
+	    MOVLW		'0'
+	    CALL		CARACTER
+	    MOVLW		'0'
+	    CALL		CARACTER
+	    
+	    GOTO		BAJA_BANDERA
+	    
+LM35FUE01	   
+	    MOVLW		B'01000000' ;Caso ADRESL = 01
+	    XORWF		ADL,W
+	    BTFSS		STATUS,Z
+	    
+	    GOTO		LM35FUE10
+	    
+	    MOVLW		'.'
+	    CALL		CARACTER
+	    MOVLW		'2'
+	    CALL		CARACTER
+	    MOVLW		'5'
+	    CALL		CARACTER
+	    
+	    GOTO		BAJA_BANDERA
+	    
+LM35FUE10
+	    MOVLW		B'10000000' ;Caso ADRESL = 10
+	    XORWF		ADL,W
+	    BTFSS		STATUS,Z
+	    
+	    GOTO		LM35FUE11
+	    
+	    MOVLW		'.'
+	    CALL		CARACTER
+	    MOVLW		'5'
+	    CALL		CARACTER
+	    MOVLW		'0'
+	    CALL		CARACTER
+	    
+	    GOTO		BAJA_BANDERA
+	    
+LM35FUE11	    
+	    MOVLW		'.'	      ;Caso ADRESL = 11
+	    CALL		CARACTER
+	    MOVLW		'7'
+	    CALL		CARACTER
+	    MOVLW		'5'
+	    CALL		CARACTER
+	    
+;  Acomodo de nuevo la bandera
+BAJA_BANDERA	    MOVLW		.131	      ; Timer cuenta a 125 * 264 prescaler = 8000
+		    MOVWF		TMR0	      ; 256-250=6, el número que nosotros queremos es 250!
+	    
+		    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
+	    
+		    GOTO		REGRESA_INT  ; Regreso de la interrupción	    
+
+;Interrupción por teclado:	    
+FUE_INT_CH
 ;	    CALL		T25MS	    ;Elimino rebotes
 	    CALL		T20MS
 	    

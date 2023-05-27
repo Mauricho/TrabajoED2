@@ -44,3 +44,9 @@ LCD_0C	EQU 0X22
 
 ; Variable para mostrar numero en LCD posicion 0x0B
 LCD_0B	EQU 0X24	
+	
+; Contador para el Timer 0
+CONT_T0	    EQU	    0X30
+	    
+; Lo utilizamos para guardar la parte baja del resultado del ADC y luego poder imprimirlo
+ADL	     EQU	0X31
