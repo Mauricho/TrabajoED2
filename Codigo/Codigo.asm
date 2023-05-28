@@ -67,7 +67,7 @@ INICIO	    CLRF 		PORTA
 ;Variables:	    
 	    CLRF		CONT_T0		; Limpiamos el registro que utiliza TMR0
 	    
-	    MOVLW		0X0D		;La primera dirección donde se muestra el numero es la LCD es 0x0D    
+	    MOVLW		0X0B		;La primera dirección donde se muestra el numero es la LCD es 0x0B    
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 ;**********************************************************************
 ;Configuración del TMR0: Cada 0.124 [S] estoy interrumpiendo
@@ -279,13 +279,13 @@ DIRECC_IMPR
 	    
 	    BCF			STATUS,RP0   ;Banco0
 	    
-	    DECF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
-	    MOVLW		0X0A		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
+	    INCF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
+	    MOVLW		0X0E		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
 	    XORWF		CONT_TEMP_LCD,W
 	    BTFSS		STATUS,Z
 	    GOTO		IMP_NEXT_DIR	    ;Imprimimos en la próxima dirección de la LCD
 	    
-	    MOVLW		0X0D		
+	    MOVLW		0X0B		
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 	    
 IMP_NEXT_DIR	    

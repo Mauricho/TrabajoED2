@@ -4,4 +4,17 @@ Coloca este número por el teclado matricial 4x4 (setea la temperatura), y por m
 La temperatura se sensara por un termopar donde los valores serán digitalizados por el ADC del pic.
 Estos valores tambien será mostrados por computadora y se graficara como esta varía. Debe alcanzar el valor seteado y mantenerse, y al finalizar decrecer.
 
+
+                                                                INCONVENIENTES HASTA AHORA:
+
+Bueno hasta ahora tenemos los siguientes problemas:
+* Debemos tratar de cambiar el teclado, para que no se junte la interrupción del teclado con el cruce por cero. Esto debido 
+a que ambos deben hacer uso del puerto B. Para el caso del teclado por lo menos necesita 4 pines. Y para el cruce por cero 1 solo.
+
+* Tambien tenemos que cambiar una pata de la LCD para que el triac pueda ser usado por el PWM que es controlado por el puerto C. (Deberiamos 
+averiguar si usamos el TMR1 se soluciona algo)
+
+* Una vez que detectemos un cambio por cruce por cero, debemos enviar un PWM dependiendo la comparación.
+
+* Averiguar sobre la transmisión.  
  
