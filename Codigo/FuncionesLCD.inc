@@ -1,4 +1,4 @@
-PUERTO	    EQU		    PORTC
+PUERTO	    EQU		    PORTD
 		    
 ;   Subrutina de saludo del LCD, es la inicialización
 SALUDO		    SUBT2V	    .61,.232	;Dejo pasar 100[mS]

@@ -46,10 +46,14 @@ INICIO	    CLRF 		PORTA
 	    
 	    BCF			STATUS,RP1  ;Bank1
 	    
-	    MOVLW		0XF0
-	    MOVWF		TRISB	     ;"Debo modificar antes al TRISB que las resistencia de elevación" 
+;Parte alta de B como entrada para el teclado y RB2 para  detectar el cruce por cero
+	    MOVLW		B'11110100'	    ;La parte alta del puerto B es entrada 	
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación 
 	    
-	    CLRF		TRISC	     ;PuertoC=Salida
+	    MOVLW		B'11001111'
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado
+	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD
+	    
 ;**********************************************************************
 ;   Configuramos el Timer0 con Option_Reg
 	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de máquina, flancos de bajada, prescaler: 1:64 
@@ -201,38 +205,35 @@ FUE_INT_CH
 	    
 	    MOVLW		0XF0
 	    ANDWF		PORTB,W
-	    MOVWF		TECLADO4X4
+	    MOVWF		TECLADO4X4  ;Guardo la parte alta de B
+	    
+	    SWAPF		TECLADO4X4,F ;Lo guardo en la parte baja de la variable TECLADO4X4
 	    
 	    BSF			STATUS,RP0  ;Banco1
 	    
-	    MOVLW		0X0F
+	    MOVLW		B'11000000' ;Al apretar el botón coloco el RD7,RD6 como entrada 
+	    MOVWF		TRISD	    
 	    
-	    MOVWF		TRISB
+	    MOVLW		B'11111111' ;Al apretar el botón coloco el RC5,RC4 como entrada 
+	    MOVWF		TRISC
+	    
+	    MOVLW		B'00001111' ;Coloco la parte alta de B como salida
+	    MOVWF		TRISB	       
+	    
 	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
-	    
+	    			    
 	    BCF			STATUS,RP0   ;Banco0
 	    
-	    CLRF		PORTB
+	    MOVLW		0XF0
+	    MOVWF		PORTB		;Coloco en 1 el puerto B para que le llegue al D7,D6,C5,C4
 	    
-	    MOVLW		0X0F		
-	    ANDWF		PORTB,W
+	    MOVLW		B'00110000'	;Me quedo con los bits del puerto C
+	    ANDWF		PORTC,W
+	    ADDWF		TECLADO4X4,F ;Valores concatenados para buscar en la tabla
 	    
-	    ADDWF		TECLADO4X4,F ;Valores concatenados para buscar en la tabla, en esta variable se guardo lo que apreto el usuario
-
-;;*********************Swap de variables para imprimir correctamente en LCD*****************************    
-;	    MOVLW		0X0B				;Si estamos con el tercer digito CONT_TEMP_LCD=0x0B
-;	    XORWF		CONT_TEMP_LCD,W
-;	    BTFSC		STATUS,Z  	    
-;	    CALL		MOV3_DIG
-;	    
-;	    MOVLW		0X0C				;Si estamos con el segundo digito CONT_TEMP_LCD=0x0C
-;	    XORWF		CONT_TEMP_LCD,W
-;	    BTFSC		STATUS,Z  	    
-;	    CALL		MOV2_DIG
-;	    	    
-;	    MOVF		TECLADO4X4,W		;Caso CONT_TEMP_LCD = D
-;	    MOVWF		LCD_0D	    	    
-;;*****************************Fin swap*********************************
+	    MOVLW		B'11000000'	;Me quedo con los bits del puerto D
+	    ANDWF		PORTD,W
+	    ADDWF		TECLADO4X4,F ;Valores concatenados para buscar en la tabla
 	    
 	    CLRF		CONT_TECL	;Contador que me permite recorrer la tabla y preguntar para cada caso
 	    
@@ -261,10 +262,15 @@ DIRECC_IMPR
 	    CALL		TABLA_HEX_ASCII
 	    CALL		CARACTER
 	    
-	    MOVLW		0X0F
-	    XORWF		PORTB,W
-	    BTFSS		STATUS,Z
-	    GOTO		$-3	    ;De esta forma evito que entre permanentemente al caso prohibido de forma permanente
+;Pregunto RD7,RD6,RC5,RC4 es cero entonces se dejo de apretar el botón	    
+	    BTFSC		PORTC,RC4 ;De esta forma evito que entre permanentemente
+	    GOTO		$-1
+	    BTFSC		PORTC,RC5 ;al caso prohibido de forma permanente
+	    GOTO		$-1
+	    BTFSC		PORTD,RD6
+	    GOTO		$-1
+	    BTFSC		PORTD,RD7;NO queda permanentemente interrumpido
+	    GOTO		$-1	    ;De esta forma evito que entre permanentemente al caso prohibido de forma permanente
 					    ;NO queda permanentemente interrumpido
 					    
 ;	    CALL		T25MS	    ;Elimino rebotes
@@ -272,12 +278,20 @@ DIRECC_IMPR
 	    
 	    BSF			STATUS,RP0  ;Banco1
 	    
-	    MOVLW		0XF0
+; Acomodo los puertos de nuevo para que siga funcionando el teclado   
+	    MOVLW		B'11110100'	    ;Parte alta de B como entrada para el teclado y RB2 para 
+	    MOVWF		TRISB		    ; detectar el cruce por cero
+
+	    MOVLW		B'11001111'
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado
+	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD	
 	    
-	    MOVWF		TRISB
 	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
 	    
 	    BCF			STATUS,RP0   ;Banco0
+	    
+	    CLRF		PORTD		;Creo q se puede sacar
+	    CLRF		PORTC		;Probar sacando estas dos líneas
 	    
 	    INCF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
 	    MOVLW		0X0E		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
@@ -287,7 +301,9 @@ DIRECC_IMPR
 	    
 	    MOVLW		0X0B		
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
-	    
+
+;Bajo la bandera:	    
+;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
 IMP_NEXT_DIR	    
 	    MOVF		PORTB,W    
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos

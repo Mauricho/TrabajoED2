@@ -1,5 +1,5 @@
 ; Son definiciones para el manejo del LCD con el puerto B
-PUERTO		EQU		    PORTC
+PUERTO		EQU		    PORTD
 	
     #DEFINE	RS_0	    BCF	    PUERTO,4	    ;RS en 0
     #DEFINE	RS_1	    BSF	    PUERTO,4	    ;RS en 1
