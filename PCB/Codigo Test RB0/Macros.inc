@@ -40,40 +40,35 @@ SUBT25MS	MACRO
 T25MS		SUBT3V	.3,.47,.25
 		RETURN
 		ENDM	
+		
+; Macro para llamar a la subrutinas de tiempo de 20 mS:
+SUBT20MS	MACRO
+T20MS		SUBT2V	.14,.196
+		RETURN
+		ENDM
 
-; Macro para display 7 segmentos cátodo común (enciende con unos)
-SIETESEGK   MACRO
-SIETESEG    ADDWF   PCL,F
-	     DT 0X3F,0X06,0X5B,0X4F,0X66,0X6D,0X7D,0X07,0X7F,0X6F,0X77,0X7C,0X39,0X5E,0X79,0X71
-	     ENDM
-	    
-; Macro para display 7 segmentos ánodo común (enciende con ceros)
-SIETESEGA   MACRO
-SIETESEG    ADDWF   PCL,F
-	     DT 0XC0,0XF9,0XA4,0XB0,0X99,0X92,0X82,0XF8,0X80,0X98,0X88,0X83,0XC6,0XA1,0X86,0X8E
-	     ENDM
-
-; Macro para animaciones en matriz 8x8
-LLAM_ANIM   MACRO		ETIQ,REPETICIONES,NUMERO_ANIM 
-	    MOVLW		REPETICIONES	;Cada repetición dura 1/60 [S]
-	    MOVWF		REPET
-ETIQ	    MOVLW		8*NUMERO_ANIM   ;Despues del 8 se escribe el número de animación
-	    MOVWF		NUM_ANIM
-	    CALL		ANIMACION
-	    
-	    DECFSZ		REPET,F
-	    GOTO		ETIQ	    
-	    ENDM
-	    
+; Macro para llamar a la subrutinas de tiempo de 100 mS:
+SUBT100MS	MACRO
+T100MS		SUBT2V	.61,.232
+		RETURN
+		ENDM
+		
 ; Macro para LCD
 LCD_MACRO   MACRO
 TABLA_LCD   ADDWF   PCL,F
 ;	    DT "El numero       "
 ;	    DT "aleatorio es:   "
-	    DT "Contador:       "
+;	    DT "Contador:       "
+;   	    DT "    Vi:       mV"
 ;	    DT "Cambio el pin:  "  	    
 ;	    DT "Contador:       "
-	    DT "Tecla:		  "	   
+;	    DT "Tec:  T=   .  "
+	    DT	"Temp. max:    "
+	    RETLW   0XDF ; Símbolo '°'
+	    RETLW   'C'
+	    DT  "Temp.:        "
+	    RETLW   0XDF ; Símbolo '°'
+	    RETLW   'C'
    ENDM	    
    
 ; Macro para el teclado matricial 4x4   

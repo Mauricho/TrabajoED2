@@ -31,7 +31,7 @@ EST_NU_PB   EQU	0X2D
 TECLADO4X4  EQU	0X2E
   
 ; Lo utilizamos para el teclado 4x4 como contador, para recorrer todos los valores de la tabla
-CONT_TECL   EQU	0X2F
+CONT_TECL   EQU	0X2F ;Es  un valor binario y puede ser de 0 a F
 
 ; Variable que nos permite ir recorriendo las distintas posiciones del LCD para mostrar el valor seteado
 CONT_TEMP_LCD	EQU	0X28 ; Empiezo en 0x0D y lo hago hasta 0x0A
@@ -50,3 +50,21 @@ CONT_T0	    EQU	    0X30
 	    
 ; Lo utilizamos para guardar la parte baja del resultado del ADC y luego poder imprimirlo
 ADL	     EQU	0X31
+	     
+; Registro que guarda la temperatura del sensor en binario
+TEMPSEN	    EQU		0X33	
+	    
+;Registro para guardar las centenas para corregir lo ingresado por teclado
+CENTE	    EQU		0X34
+	    
+;Registro para guardar las decenas para corregir lo ingresado por teclado
+DECE_TEC	    EQU		0X35	    
+	    
+;Registro para guardar las unidades	  para corregir lo ingresado por teclado 
+UNID_TEC	    EQU		0X36 
+	    
+;Registro para guardar el número digitado en un 1 byte
+NUMUSU	    EQU		0X37	  
+	    
+;Registro para guardar el número digitado en un 1 byte
+AUXNUMUSU    EQU	0X38	;Auxiliar para corregir el número de usuario

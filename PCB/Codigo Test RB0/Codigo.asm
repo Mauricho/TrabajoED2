@@ -7,7 +7,7 @@
 ; "Temp.:        °C"
 ; Deberá desplegar la temperatura utilizando el sensor LM35 con una resolución de 0,25 °C,
 ; la entrada del sensor será RE2/AN7
-; Al detectar un pulso por el puerto RB2 (en este caso) por el RC2 saco un pulso, comparando la
+; Al detectar un pulso por el puerto RB0 (en este caso) por el RC2 saco un pulso, comparando la
 ; temperatura del sensor y la seteada por el usuario.	    
 	    
 	    LIST P=16F887
@@ -48,20 +48,23 @@ INICIO	    CLRF 		PORTA
 	    
 	    BCF			STATUS,RP1  ;Bank1
 	    
-;Parte alta de B como entrada para el teclado y RB2 para  detectar el cruce por cero
-	    MOVLW		B'11110100'	    ;La parte alta del puerto B es entrada 	
-	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación 
+;Parte alta de B como entrada para el teclado y RB0 para  detectar el cruce por cero
+	    MOVLW		B'11110001'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación  
 	    
 	    MOVLW		B'11001011'
 	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado
 	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD
 	    
 ;**********************************************************************
-;   Configuramos el Timer0 con Option_Reg
+;   Configuramos el Timer0 con Option_Reg, nos sirve para el teclado, TMR0 y RB0/INT
 	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de máquina, flancos de bajada, prescaler: 1:64 
 	    MOVWF		OPTION_REG
-
-	    COMF		IOCB,F	     ; Habilitamos todos los pines del puerto B como fuente de interrupción 
+	    
+	    MOVLW		B'11110001' ;Solo activamos las resistencias del teclado
+	    MOVWF		WPUB
+	    
+	    COMF		IOCB,F
 	    
 	    MOVLW		B'00010000' ;Ajuste a la izq., Vref-=Vss, Vref+=An3
 	    MOVWF		ADCON1
@@ -92,9 +95,12 @@ INICIO	    CLRF 		PORTA
 	    MOVF		PORTB,W		;Estamos leyendo el puerto
 	  
 ;   Damos los permisos de interrupción	    	    
-;   Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
+;   Recordar: se debe leer el puerto B antes de bajar la bandera RBIF	    
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    BSF			INTCON,RBIE ;Habilitamos las interrupciones por el puertoB
+	    
+	    BCF			INTCON,INTF ;Bajamos la bandera de interrupción por RB0/INT
+	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0   
 	    
 	    BCF			INTCON,T0IF ;Bajamos la bandera de TMR0 antes de dar los permisos
 	    BSF			INTCON,T0IE ;Habilitamos las interrupciones por TMR0
@@ -104,9 +110,14 @@ INICIO	    CLRF 		PORTA
 ;***********************Programa Principal*****************************    
 	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
 ;*******************Rutina Servicio Interrupción***********************    
-RSI	    BTFSS		INTCON,T0IF	 
-	    GOTO		FUE_INT_CH    ;Solución por interrupcion en B
+RSI	    
+	    BTFSC		INTCON,INTF
+	    GOTO		FUE_RB0	    ;Solución por interrupcion en RB0/INT	    
 	    
+	    BTFSS		INTCON,T0IF	 
+	    GOTO		FUE_INT_CH    ;Solución por interrupcion a causa del teclado 
+
+; Interrupción del TMR0	    
 	    DECFSZ		CONT5,F
 	    GOTO		BAJA_BANDERA	;Bajo la bandera hasta cumplir los 62 veces
 	    
@@ -193,7 +204,7 @@ LM35FUE11
 	    MOVLW		'5'
 	    CALL		CARACTER
 	    
-;  Acomodo de nuevo la bandera
+;Acomodo de nuevo la bandera del TMR0
 BAJA_BANDERA	    MOVLW		.131	      ; Timer cuenta a 125 * 264 prescaler = 8000
 		    MOVWF		TMR0	      ; 256-250=6, el número que nosotros queremos es 250!
 	    
@@ -204,10 +215,12 @@ BAJA_BANDERA	    MOVLW		.131	      ; Timer cuenta a 125 * 264 prescaler = 8000
 ;Interrupción por teclado:	    
 FUE_INT_CH
 ;	    CALL		T25MS	    ;Elimino rebotes
-	    CALL		T20MS
-;Pregunto si RB0 es 1	    
-	    BTFSS		PORTB,RB2 
-	    GOTO		CRUCE0
+	    CALL		T100MS
+	    
+;;Pregunto si RB0 es 1	    
+;	    BTFSS		PORTB,RB0 
+;	    GOTO		FUE_RB0	 
+	    
 ;Caso en que fue el teclado	    
 	    MOVLW		0XF0
 	    ANDWF		PORTB,W
@@ -223,7 +236,7 @@ FUE_INT_CH
 	    MOVLW		B'11111111' ;Al apretar el botón coloco el RC5,RC4 como entrada 
 	    MOVWF		TRISC
 	    
-	    MOVLW		B'00001111' ;Coloco la parte alta de B como salida
+	    MOVLW		B'00000000' ;Coloco la parte alta de B como salida, y la parte baja tambien para que no entre ruido
 	    MOVWF		TRISB	       
 	    
 	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
@@ -280,12 +293,12 @@ DIRECC_IMPR
 					    ;NO queda permanentemente interrumpido
 					    
 ;	    CALL		T25MS	    ;Elimino rebotes
-	    CALL		T20MS
+	    CALL		T100MS
 	    
 	    BSF			STATUS,RP0  ;Banco1
 	    
 ; Acomodo los puertos de nuevo para que siga funcionando el teclado   
-	    MOVLW		B'11110100'	    ;Parte alta de B como entrada para el teclado y RB2 para 
+	    MOVLW		B'11110000'	    ;Parte alta de B como entrada para el teclado y RB2 para 
 	    MOVWF		TRISB		    ; detectar el cruce por cero
 
 	    MOVLW		B'11001111'
@@ -308,21 +321,43 @@ DIRECC_IMPR
 	    MOVLW		0X0B		
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 	    
-	    GOTO		IMP_NEXT_DIR
+; Acomodo la bandera del teclado	    
+IMP_NEXT_DIR	    
+	    MOVF		PORTB,W    ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
+	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    
-CRUCE0	    
+	    ; Acomodo la bandera del RB0
+	    BCF			INTCON,INTF ;Bajamos la bandera
+	    
+	    GOTO		REGRESA_INT  ; Regreso de la interrupción del teclado
+
+;Interrupción por RB0:    
+FUE_RB0	    
+	    CALL		T1MS
+	    BSF			PORTC,RC2
+;	    CALL		T1MS
+	    CALL		T20US
+	    BCF			PORTC,RC2
+	    
+; Acomodo la bandera del RB0
+	    BCF			INTCON,INTF ;Bajamos la bandera
+
+; Acomodo el resto de las banderas
+	    MOVF		PORTB,W    ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
+	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
+	    
+	    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
+	    
+;CRUCE0	    
 ;	    Delay alpha=0[mS]	    
 ;	    Delay alpha=5[mS]
 ;	    Delay alpha=10[mS]
-	    CALL    T6MS
-	    BSF	     PORTC,RC2
-	    CALL    T20US	    ;CALL    T600MS
-	    BCF	     PORTC,RC2
+;	    CALL    T6MS
+;	    BSF	     PORTC,RC2
+;	    CALL    T20US	    ;CALL    T600MS
+;	    BCF	     PORTC,RC2
 ;Bajo la bandera:	    
 ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
-IMP_NEXT_DIR	    
-	    MOVF		PORTB,W    
-	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    
 REGRESA_INT	
 	    NOP		;Este nop es porque no permite tener la etiqueta pegada al include

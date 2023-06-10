@@ -41,7 +41,7 @@ DECRE3V	    NOP
 T30S	    SUBT3V  .96,.211,.211
 	    RETURN
 	    
-;   Subrutina de tiempo de 30 Segundos
+;   Subrutina de tiempo de 600 Milisegundos
 T600MS	    SUBT3V  .247,.49,.7
 	    RETURN
 
@@ -52,4 +52,38 @@ T120AVO	    SUBT2V  .7,.157
 	    SUBT25MS    ;Se agrega porque el programa la llama mediante una macro que utiliza T25MS
 			; entonces aquí llamamos a la macro que implementa el T25MS
 	    SUBT20MS
+	    
+	    SUBT100MS
+	    
+; Subrutinas de tiempo de 4 mS:
+T4MS		SUBT2V	.142,.4
+		NOP
+		RETURN
+
+; Subrutinas de tiempo de 2 mS:
+T2MS		SUBT2V	.35,.8
+		NOP
+		RETURN
+		
+; Subrutinas de tiempo de 1 mS:
+T1MS		SUBT1V	.142
+		NOP
+		RETURN
+		
+; Subrutinas de tiempo de 0.5 mS = 500 uS:
+;T500US		SUBT2V	.17,.4
+;		NOP
+;		RETURN
+
+;;   Subrutina de tiempo de 6 milisegundos
+;T6MS	    SUBT1V  .85
+;	    RETURN
+	    
+;;   Subrutina de tiempo de 20 microsegundos
+;T20US	    SUBT1V  .2
+;	    NOP
+;	    RETURN
+	    
+	    
+
 
