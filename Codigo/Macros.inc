@@ -52,6 +52,12 @@ SUBT100MS	MACRO
 T100MS		SUBT2V	.61,.232
 		RETURN
 		ENDM
+
+; Macro para llamar a la subrutinas de tiempo de 80 mS:
+SUBT80MS	MACRO
+T80MS		SUBT3V	.177,.1,.41
+		RETURN
+		ENDM
 		
 ; Macro para LCD
 LCD_MACRO   MACRO
@@ -81,7 +87,7 @@ TABLA_TECL  ADDWF   PCL,F
 ; Macro para la tabla de Hexa a ASCII  
 TABLA_H_A	    MACRO	     
 TABLA_HEX_ASCII   ADDWF PCL,F
-		    DT	"0123456789ABCDEF@"
+		    DT	"123A456B789CE0FD@"
 		    ENDM
 	    
 		    

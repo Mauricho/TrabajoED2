@@ -49,11 +49,11 @@ INICIO	    CLRF 		PORTA
 	    BCF			STATUS,RP1  ;Bank1
 	    
 ;Parte alta de B como entrada para el teclado y RB0 para  detectar el cruce por cero
-	    MOVLW		B'11110001'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
+	    MOVLW		B'11110000'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
 	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación  
 	    
-	    MOVLW		B'11001011'
-	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado
+	    MOVLW		B'11001111'
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 para Control plancha (al czo esta apagado)
 	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD
 	    
 ;**********************************************************************
@@ -61,7 +61,7 @@ INICIO	    CLRF 		PORTA
 	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de máquina, flancos de bajada, prescaler: 1:64 
 	    MOVWF		OPTION_REG
 	    
-	    MOVLW		B'11110001' ;Solo activamos las resistencias del teclado
+	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
 	    MOVWF		WPUB
 	    
 	    COMF		IOCB,F
@@ -99,8 +99,8 @@ INICIO	    CLRF 		PORTA
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    BSF			INTCON,RBIE ;Habilitamos las interrupciones por el puertoB
 	    
-	    BCF			INTCON,INTF ;Bajamos la bandera de interrupción por RB0/INT
-	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0   
+;	    BCF			INTCON,INTF ;Bajamos la bandera de interrupción por RB0/INT
+;	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0   
 	    
 	    BCF			INTCON,T0IF ;Bajamos la bandera de TMR0 antes de dar los permisos
 	    BSF			INTCON,T0IE ;Habilitamos las interrupciones por TMR0
@@ -108,6 +108,9 @@ INICIO	    CLRF 		PORTA
 	    BSF			INTCON,GIE  ;Habilitamos las interrupciones globales
 	    
 ;***********************Programa Principal*****************************    
+;	    MOVLW		0X64
+;	    MOVWF		NUMUSU
+	    
 	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
 ;*******************Rutina Servicio Interrupción***********************    
 RSI	    
@@ -214,8 +217,8 @@ BAJA_BANDERA	    MOVLW		.131	      ; Timer cuenta a 125 * 264 prescaler = 8000
 
 ;Interrupción por teclado:	    
 FUE_INT_CH
-	    CALL		T100MS
-	    
+	    CALL		T25MS	    ;Se debe dar tiempo para que lea los puertos pero tampoco tanto
+	    CALL		T25MS				    ;perjudica el comportamiento del programa
 ;Caso en que fue el teclado	    
 	    MOVLW		0XF0
 	    ANDWF		PORTB,W
@@ -273,7 +276,7 @@ DIRECC_IMPR
 	    CALL		DIRECCION_DDRAM
 	    
 	    MOVF		CONT_TECL,W	;Pasamos lo que encontramos a W 
-	    CALL		CORRECT_TECL
+	    CALL		CORRECT_TECL	;!Corregimos la tecla!
 	    CALL		TABLA_HEX_ASCII
 	    CALL		CARACTER
 	    
@@ -288,23 +291,54 @@ DIRECC_IMPR
 	    GOTO		$-1	    ;De esta forma evito que entre permanentemente al caso prohibido de forma permanente
 					    ;NO queda permanentemente interrumpido
 					    
-;	    CALL		T25MS	    ;Elimino rebotes
-	    CALL		T100MS
+	    CALL		T100MS	    ;Se le da un tiempo para que termine de leer los valores
 	    
-	    BSF			STATUS,RP0  ;Banco1
+;********************** PREGUNTAMOS SI YA SE DIGITO UNIDAD *************	    
+	    MOVLW		0X0D			;Preguntamos si se digito la unidad	que es el tercer digito
+	    XORWF		CONT_TEMP_LCD,W
+	    BTFSC		STATUS,Z
+	    GOTO		ON_RB0			;Habilitamos las interrupciones por RB0/INT
+;**********************************************************************	 	    
+OFF_RB0	    BSF			STATUS,RP0	;Banco 1
 	    
-; Acomodo los puertos de nuevo para que siga funcionando el teclado   
-	    MOVLW		B'11110000'	    ;Parte alta de B como entrada para el teclado y RB2 para 
-	    MOVWF		TRISB		    ; detectar el cruce por cero
-
+	    MOVLW		B'11110000' ;La parte alta del puerto B es entrada para el teclado 
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación
+	    
 	    MOVLW		B'11001111'
-	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado
-	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD	
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 apagado control plancha
+	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD	 
 	    
 	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
 	    
-	    BCF			STATUS,RP0   ;Banco0
+	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
+	    MOVWF		WPUB	     ;Probar eliminando esta línea y la anterior	    
+;Deshabilitamos RB0 ************************	     
+	    BCF			INTCON,INTE ;Deshabilitamos las interrupciones por RB0	    
 	    
+	    BCF			STATUS,RP0	;Banco 0
+	    
+	    GOTO		SALTA_ON_RB0
+;**********************************************************************
+ON_RB0	    BSF			STATUS,RP0  ;Banco 1
+	    
+	    MOVLW		B'11110001'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
+	    MOVWF		TRISB		    ;Debo modificar antes al TRISB que las resistencia de elevación
+	    
+	    MOVLW		B'11001011'
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 prendido control plancha
+	    CLRF		TRISD	     ;El puerto D es saliente por el teclado y LCD
+	    
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    
+	    MOVLW		B'11110001' ;Activamos las resistencias del teclado y RB0
+	    MOVWF		WPUB	    
+;Habilitamos RB0 ******************************************************	    
+	    BCF			INTCON,INTF;1° Bajamos la bandera y despues habilitamos RB0
+	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0 
+	    
+	    BCF			STATUS,RP0   ;Banco 0	   
+	    
+SALTA_ON_RB0	    
 	    CLRF		PORTD		;Creo q se puede sacar
 	    CLRF		PORTC		;Probar sacando estas dos líneas
 	    
@@ -319,42 +353,64 @@ DIRECC_IMPR
 	    
 ; Acomodo la bandera del teclado	    
 IMP_NEXT_DIR	    
-	    MOVF		PORTB,W    ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
+	    MOVF		PORTB,W      ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    
-	    ; Acomodo la bandera del RB0
+;	    ; Acomodo la bandera del RB0
 	    BCF			INTCON,INTF ;Bajamos la bandera
 	    
 	    GOTO		REGRESA_INT  ; Regreso de la interrupción del teclado
+	    
 
 ;Interrupción por RB0:    
 FUE_RB0	    
-;	    CALL		T25MS	    ;Elimino rebotes
-	    CALL		T1MS
+	    MOVF		NUMUSU,W	;Controlo si la temperatura digitada es mayor o igual que la que se senso		
+	    SUBWF		TEMPSEN,W	;TEMPSEN-NUMUSU
+	    BTFSC		STATUS,C	;Si: NUMUSU > TEMPSEN la temperatura sigue subiendo
+	    
+	    GOTO		OFF_PWM		;Deshabilitamos las interrupciones por RB0/INT, se deshabilita para la pr?oxima interrupción
+	    GOTO		ON_PWM      ;NUMUSU > TEPSEN
+;**********************************************************************	    
+OFF_PWM	
+	    BSF			STATUS,RP0	;Banco 1
+	    
+	    MOVLW		B'11110000' ;La parte alta del puerto B es entrada para el teclado 
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación
+	    
+	    MOVLW		B'11001111'
+	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 apagado control plancha 
+	    
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    
+	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
+	    MOVWF		WPUB	     ;Probar eliminando esta línea y la anterior	    
+;Deshabilitamos RB0 ************************	     
+	    BCF			INTCON,INTE ;Deshabilitamos las interrupciones por RB0	    
+	    
+	    BCF			STATUS,RP0	;Banco 0	    
+;**********************************************************************	    
+ON_PWM	        
+;	    	    
+	    CALL		T25MS	    ;Elimino rebotes
+;	    CALL		T1MS
 	    BSF			PORTC,RC2
-	    CALL		T1MS
-;	    CALL		T25MS	    ;Elimino rebotes
+;	    CALL		T1MS
+	    CALL		T25MS	    ;Elimino rebotes
+	   
 	    BCF			PORTC,RC2
 	    
 ; Acomodo la bandera del RB0
 	    BCF			INTCON,INTF ;Bajamos la bandera
 
-; Acomodo el resto de las banderas
+; Acomodo la bandera del teclado (ver de cambiar esto último)
 	    MOVF		PORTB,W    ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
+
+;	    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
 	    
-	    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
-	    
-;CRUCE0	    
-;	    Delay alpha=0[mS]	    
-;	    Delay alpha=5[mS]
-;	    Delay alpha=10[mS]
-;	    CALL    T6MS
-;	    BSF	     PORTC,RC2
-;	    CALL    T20US	    ;CALL    T600MS
-;	    BCF	     PORTC,RC2
-;Bajo la bandera:	    
-;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
+;	    GOTO		REGRESA_INT  ; Regreso de la interrupción del RB0
+;	    
+
 	    
 REGRESA_INT	
 	    NOP		;Este nop es porque no permite tener la etiqueta pegada al include
@@ -369,62 +425,74 @@ CORRECT_TECL
 	    XORWF	CONT_TEMP_LCD,W
 	    BTFSC	STATUS,Z
 	    GOTO	CENTENA
+	    
 ;Caso decena:
 	    MOVLW	0X0C
 	    XORWF	CONT_TEMP_LCD,W
 	    BTFSC	STATUS,Z
 	    GOTO	DECENA
+	    
 ;Caso unidad:	    
 	    MOVLW	0X0D
 	    XORWF	CONT_TEMP_LCD,W
 	    BTFSC	STATUS,Z
 	    GOTO	UNIDAD
+	    
 ;**********************************************************************
 ;********************************* CENTENA ****************************
-CENTENA	    CLRF	NUMUSU
+CENTENA
+	    CLRF	CENTE
+	    CLRF	DECE_TEC
+	    CLRF	UNID_TEC
+	    CLRF	NUMUSU
 	    MOVF	CONT_TECL,W
 	    MOVWF	CENTE		;Guarde el contenido binario en Cente 
-	    MOVLW	0X02
-	    SUBWF	CENTE,W		;CENTE-2
-	    BTFSS	STATUS,C	;Cente es mayor o igual a 2? C: 1 positivo (cente >= 2)
-	    
+	    MOVLW	.1
+	    SUBWF	CENTE,W		;CENTE-1
+	    BTFSC	STATUS,C	;Cente es mayor o igual a 2? C: 1 positivo (cente >= 2)    
+	    GOTO	CENTEMAY2
 	    GOTO	CENTEMEN2
+	   
 	    
-	    GOTO	CENTEMAY2	 ;Mayor o igual   
-	    
-CENTEMAY2  MOVLW	0X02		  ;La centena es mayor o igual a 2  
+CENTEMAY2
+	    MOVLW	0X0D
+	    SUBWF	CENTE,W
+	    BTFSC	STATUS,Z
+	    GOTO	ES0
+	    MOVLW	0X02		  ;La centena es mayor o igual a 2  
 	    MOVWF	CENTE	
-
 	    MOVLW	.20
 	    MOVWF	AUXNUMUSU
 	    MOVLW	.10    
-CARGO200   ADDWF	NUMUSU,F
+CARGO200 
+	    ADDWF	NUMUSU,F
 	    DECFSZ	AUXNUMUSU,F
-	    GOTO	CARGO200  
-	    MOVF	CENTE,W
-	    
+	    GOTO	CARGO200   
+	    MOVLW	.1
 	    RETURN
 	    
-CENTEMEN2  MOVLW	.1
+CENTEMEN2  
+	    MOVLW	.1
 	    MOVWF	AUXNUMUSU	;La centena es menor a 2
-	    XORWF	CENTE,W
-	    BTFSC	STATUS,Z	;CENTE = 1?
-	    GOTO	CENTE1
-	    MOVF	CENTE,W
+	    SUBWF	CENTE,W
+	    BTFSS	STATUS,C	;CENTE = 1?
+	    GOTO	CENTE1	   
+	    GOTO	ES0			;CENTE = 0 NO HACE NADA
 	    
-	    RETURN			;CENTE = 0 NO HACE NADA
-	    
-CENTE1	    MOVLW	.10
+CENTE1    MOVLW	.1
+	    MOVWF	CENTE
+	    MOVLW	.10
 	    MOVWF	AUXNUMUSU   ;cente = a 10
-CARGO100   ADDWF	NUMUSU,F    ;Sumo 10
+CARGO100 
+	    ADDWF	NUMUSU,F    ;Sumo 10
 	    DECFSZ	AUXNUMUSU,F 
-	    GOTO	CARGO100
-	    MOVF	CENTE,W
-	    
+	    GOTO	CARGO100  
+	    MOVLW	.0
 	    RETURN
 	    
 ;************************ DECENA **************************************
-DECENA	    MOVF	CONT_TECL,W
+DECENA    
+	    MOVF	CONT_TECL,W
 	    MOVWF	DECE_TEC
 	    MOVLW	.2
 	    SUBWF	CENTE,W
@@ -447,76 +515,115 @@ CENTEMENOR2
 	    GOTO	PONGO9
 	    GOTO	MENOR9
 	    
-PONGO5	    MOVLW	.5
+PONGO5    
+	    MOVLW	 0X0D
+	    SUBWF	  DECE_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	ES0
+	    MOVLW	.5
 	    MOVWF	DECE_TEC
 	    MOVWF	AUXNUMUSU
 	    MOVLW	.10
-CARGO50	    ADDWF	NUMUSU
+CARGO50  
+	    ADDWF	NUMUSU
 	    DECFSZ	AUXNUMUSU,F
 	    GOTO	CARGO50
-	    MOVF	DECE_TEC,W
+	    MOVLW	.5
 	    RETURN
 	    
-MENOR5	    MOVLW	.4
+MENOR5    
+	    MOVLW	.3
+	    SUBWF	DECE_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	PONGO5
+	    MOVLW	.4
 	    MOVWF	AUXNUMUSU
-DECREM	    MOVF	AUXNUMUSU,W
+DECREM    
+	    MOVF	AUXNUMUSU,W
 	    XORWF	DECE_TEC,W
 	    BTFSC	STATUS,Z  ;RESTO DECE Y AUXNUMUSU SI Z=0 DECREAUX0
 	    GOTO	NODECRE
 	    GOTO	DECREAUX0
 	    
-DECREAUX0  
-	    DECFSZ	AUXNUMUSU,F
+DECREAUX0  	  
+	    DECF	AUXNUMUSU,F
 	    GOTO	DECREM
 	    
 	    
-NODECRE	    MOVF	AUXNUMUSU,W
+NODECRE  
+	    MOVLW	.4
+	    SUBWF	DECE_TEC,W
+	    BTFSC	STATUS,Z
+	    DECF	AUXNUMUSU,F
+	    MOVF	AUXNUMUSU,W
 	    MOVWF	DECE_TEC
 	    MOVLW	.10
-CARGOMEN5   ADDWF	NUMUSU
+	    INCF	AUXNUMUSU,F
+	    MOVF	AUXNUMUSU,W
+	    MOVWF	DECE_TEC
+	    MOVLW	.10
+CARGOMEN5
+	    ADDWF	NUMUSU
+	    MOVLW	.10
 	    DECFSZ	AUXNUMUSU,F
 	    GOTO	CARGOMEN5
-    	    MOVF	DECE_TEC,W
-
+    	    MOVF	CONT_TECL,W
 	    RETURN
-	    
-PONGO9	    MOVLW	.9
+PONGO9    
+	    MOVLW	 0X0D
+	    SUBWF	  DECE_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	ES0
+	    MOVLW	.9
 	    MOVWF	DECE_TEC
 	    MOVWF	AUXNUMUSU
 	    MOVLW	.10
-CARGO90	    ADDWF	NUMUSU
+CARGO90
+	    ADDWF	NUMUSU
 	    DECFSZ	AUXNUMUSU,F
 	    GOTO	CARGO90
-    	    MOVF	DECE_TEC,W
+    	    MOVLW	0X0A
 
 	    RETURN
 	    
-MENOR9	    MOVLW	.8
+MENOR9
+	    MOVLW	.3
+	    SUBWF	DECE_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	PONGO9
+	    MOVLW	.8
 	    MOVWF	AUXNUMUSU
 	    
-DECR	    MOVF	AUXNUMUSU,W
+DECR	    
+	    MOVF	AUXNUMUSU,W
 	    XORWF	DECE_TEC,W
 	    BTFSC	STATUS,Z  ;RESTO DECE Y AUXNUMUSU SI Z=0 DECREAUX0
 	    GOTO	NODEC
 	    GOTO	DECREAUX1
 	    
 DECREAUX1  
-	    DECFSZ	AUXNUMUSU,F
+	    DECF	AUXNUMUSU,F
 	    GOTO	DECR
-  	    MOVF	DECE_TEC,W
-
-	    RETURN
+  	   
 	    
-NODEC	    MOVLW	.10
-CARGOMEN9   ADDWF	NUMUSU
+NODEC	    
+	    MOVLW	.3
+	    SUBWF	DECE_TEC
+	    BTFSS	STATUS,C
+	    INCF	AUXNUMUSU,F
+	    MOVF	AUXNUMUSU,W
+	    MOVWF	DECE_TEC
+	    MOVLW	.10
+CARGOMEN9
+	    ADDWF	NUMUSU
 	    DECFSZ	AUXNUMUSU,F
 	    GOTO	CARGOMEN9
-    	    MOVF	DECE_TEC,W
-
+	    MOVF	CONT_TECL,W
 	    RETURN
 	    
 ;*********************** UNIDAD ***************************************
-UNIDAD	    MOVF	CONT_TECL,W
+UNIDAD
+	    MOVF	CONT_TECL,W
 	    MOVWF	UNID_TEC
 	    MOVLW	.2
 	    XORWF	CENTE,W
@@ -524,64 +631,92 @@ UNIDAD	    MOVF	CONT_TECL,W
 	    GOTO	CENTEIG2
 	    GOTO	CENTEM2    	    
 
-CENTEIG2    MOVLW	0X05
+CENTEIG2 
+	    MOVLW	0X05
 	    XORWF	DECE_TEC,W		;DECE-5
 	    BTFSS	STATUS,Z	;DECE es igual a 5?	    
 	    GOTO	DECMENO5   
 	    GOTO	DECIGU5
 	    
-DECIGU5	    MOVLW	.5		;DECENA igual a 5
+DECIGU5
+	    MOVLW	.5		;DECENA igual a 5
 	    SUBWF	UNID_TEC,W		;UNID-5
 	    BTFSC	STATUS,C	;UNIDAD MAYOR O IGUAL A 5 C = 1
 	    GOTO	UNITY5
 	    GOTO	UNITYNO5	    
 	    
-UNITY5	    MOVLW	.5
+UNITY5
+	    MOVLW	0X0D
+	    SUBWF	UNID_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	ES0
+	    MOVLW	.5
 	    MOVWF	UNID_TEC
 	    MOVWF	AUXNUMUSU
 	    MOVLW	.1
-CARGOM5	    ADDWF	NUMUSU
-	    DECFSZ	AUXNUMUSU,F
-	    GOTO	CARGOM5
-	    MOVF	UNID_TEC,W
-
-	    RETURN
-	    
-UNITYNO5   MOVLW	.4
-CARGM4	    MOVWF	AUXNUMUSU
-	    XORWF	UNID_TEC,W ;UNID-W
-	    BTFSC	STATUS,Z
-	    DECFSZ	AUXNUMUSU,F
-	    GOTO	CARGM4
-	    GOTO	IGUALES4 
-	    
-IGUALES4   MOVLW	.1
+CARGOM5
 	    ADDWF	NUMUSU
 	    DECFSZ	AUXNUMUSU,F
-	    GOTO	IGUALES4
+	    GOTO	CARGOM5
+	    MOVLW	.5
+	    RETURN
+	    
+UNITYNO5 
+	    MOVLW	.3
+	    SUBWF	UNID_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	UNITY5
+	    	    
+CARGM4	    
+	    MOVLW	.3
+	    SUBWF	UNID_TEC,W
+	    BTFSS	STATUS,C
+	    INCF	UNID_TEC
 	    MOVF	UNID_TEC,W
+	    MOVWF	AUXNUMUSU
+IGUALES4 
+	    MOVLW	.1
+	    ADDWF	NUMUSU
+	    DECF	AUXNUMUSU
+	    MOVLW	.0
+	    SUBWF	AUXNUMUSU,W
+	    BTFSS	STATUS,Z
+	    GOTO	IGUALES4
+	    MOVF	CONT_TECL,W
 
 	    RETURN
 	    
-DECMENO5    MOVLW	.9
+DECMENO5 
+	    MOVLW	.9
 	    ;MOVWF	AUXNUMUSU
 	    SUBWF	UNID_TEC,W ;UNID-W
 	    BTFSS	STATUS,C;UNIDAD MAYOR O IGUAL 9 C=1
 	    GOTO	CARGM9
 	    GOTO	IGUALES9
 
-IGUALES9   MOVLW	.9
+IGUALES9 
+	    MOVLW	0X0D
+	    SUBWF	UNID_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	ES0
+	    MOVLW	.9
 	    MOVWF	AUXNUMUSU
 	    MOVWF	UNID_TEC
 	    MOVLW	.1	
-CARGADE9   ADDWF	NUMUSU
+CARGADE9 
+	    ADDWF	NUMUSU
 	    DECFSZ	AUXNUMUSU
 	    GOTO	CARGADE9
-	    MOVF	UNID_TEC,W
+	    MOVLW	0X0A
     
 	    RETURN  
     
-CARGM9	    MOVLW	.9
+CARGM9
+	    MOVLW	.3
+	    SUBWF	UNID_TEC,W
+	    BTFSC	STATUS,Z
+	    GOTO	IGUALES9
+	    MOVLW	.9
 	    MOVWF	AUXNUMUSU
 PREG	    MOVF	AUXNUMUSU,W
 	    XORWF	UNID_TEC,W;SUBWF	UNID_TEC
@@ -590,85 +725,37 @@ PREG	    MOVF	AUXNUMUSU,W
 	    GOTO    	YAESTA
 	    
 	    
-DECREMEAUX  DECF	AUXNUMUSU,F
+DECREMEAUX  
+	    DECF	AUXNUMUSU,F
 	    GOTO	PREG	
-	    
-YAESTA	    MOVWF	AUXNUMUSU
-	    MOVLW	0X00
-	    XORWF	UNID_TEC,W
-	    BTFSS	STATUS,Z
-	    GOTO	NOES0
-    	    MOVF	UNID_TEC,W
-	    RETURN
-	   
-NOES0
-	    MOVLW	.1
+	    	           
+YAESTA    
+	    MOVLW	.3
+	    SUBWF	UNID_TEC,W
+	    BTFSS	STATUS,C
+	    INCF	UNID_TEC
+	    MOVF	UNID_TEC,W
+	    MOVWF	AUXNUMUSU
+NOES0	     MOVLW	.1
 	    ADDWF	NUMUSU,F
 	    DECFSZ	AUXNUMUSU
 	    GOTO	NOES0
-    	    MOVF	UNID_TEC,W
+    	    MOVF	CONT_TECL,W
 
-	    RETURN	           
+	    RETURN
+CENTEM2
+	    GOTO	DECMENO5
 
-CENTEM2	    GOTO	DECMENO5
+ES0	    
+	    MOVLW   .13
+	    RETURN
+	    
+;*********************** END ****************************************
+	    
 ;**************** Subrutinas de Binario a Decimal *********************
-BIN_A_DEC  CLRF		UNID_L
-	    CLRF		DECE_L
-	    CLRF		CENT_L
-	    
-; Pasamos de binario a decimal
-RESTA100   MOVLW		.100
-	    SUBWF		DECIMAL,F
-	    BTFSS		STATUS,C
-	    GOTO		SUMA100
-	    INCF		CENT_L,F
-	    GOTO		RESTA100
-
-SUMA100	    MOVLW		.100
-	    ADDWF		DECIMAL,F
-	    
-RESTA10	    MOVLW		.10
-	    SUBWF		DECIMAL,F
-	    BTFSS		STATUS,C
-	    GOTO		SUMA10
-	    INCF		DECE_L,F
-	    GOTO		RESTA10
-
-SUMA10	    MOVLW		.10
-	    ADDWF		DECIMAL,F
-	    
-	    MOVF		DECIMAL,W
-	    MOVWF		UNID_L
-	    
-	    RETURN 
-	    
+	    include <BinToDecimal.inc>	    
 ;******* Subrutina para imprimir, primero sumamos 30 para pasarlo ASCII ********
-IMPRIM_NUM	MOVLW		0X30
-		ADDWF		UNID_L,F    ;Lo pasamos a ASCII sumandole 30
-		ADDWF		DECE_L,F
-		ADDWF		CENT_L,F
-	    
-; Le indicamos a partir de que dirección empiezo a imprimir
-		MOVF		DIR_LCD,W    
-		CALL		DIRECCION_DDRAM	
-
-		MOVF		CENT_L,W
-		CALL		CARACTER		;Imprimimos centenas	    
-		MOVF		DECE_L,W
-		CALL		CARACTER		;Imprimimos decenas
-		MOVF		UNID_L,W
-		CALL		CARACTER		;Imprimimos unidades
-
-		RETURN
-		
-;****	    Subrutina para imprimir correctamente en la LCD          ********
-;MOV3_DIG   MOVF		LCD_0C,W		;Caso CONT_TEMP_LCD = B
-;	    MOVWF		LCD_0B
-;	    
-;MOV2_DIG   MOVF		LCD_0D,W		;Caso CONT_TEMP_LCD = C
-;	    MOVWF		LCD_0C	   
-;	    RETURN	
-	    
+	    include <PrintASCII.inc>
 ;*********************** Subrutinas de Tiempo *************************
 	    include <SubrutinasTiempo.inc>    
 ;*********************** Subrutinas de Funciones LCD ******************	    

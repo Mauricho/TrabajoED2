@@ -49,12 +49,6 @@ T600MS	    SUBT3V  .247,.49,.7
 T120AVO	    SUBT2V  .7,.157	 
 	    RETURN
 	    
-	    SUBT25MS    ;Se agrega porque el programa la llama mediante una macro que utiliza T25MS
-			; entonces aquí llamamos a la macro que implementa el T25MS
-	    SUBT20MS
-	    
-	    SUBT100MS
-	    
 ; Subrutinas de tiempo de 4 mS:
 T4MS		SUBT2V	.142,.4
 		NOP
@@ -69,6 +63,15 @@ T2MS		SUBT2V	.35,.8
 T1MS		SUBT1V	.142
 		NOP
 		RETURN
+		
+		
+	    SUBT25MS    ;Se agrega porque el programa la llama mediante una macro que utiliza T25MS
+			; entonces aquí llamamos a la macro que implementa el T25MS
+	    SUBT20MS
+	    
+	    SUBT100MS
+	    
+	    SUBT80MS
 		
 ; Subrutinas de tiempo de 0.5 mS = 500 uS:
 ;T500US		SUBT2V	.17,.4

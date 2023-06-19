@@ -1,0 +1,246 @@
+CORRECT_TECL
+;Caso centena:	    
+	    MOVLW	0X0B
+	    XORWF	CONT_TEMP_LCD,W
+	    BTFSC	STATUS,Z
+	    GOTO	CENTENA
+	    
+;Caso decena:
+	    MOVLW	0X0C
+	    XORWF	CONT_TEMP_LCD,W
+	    BTFSC	STATUS,Z
+	    GOTO	DECENA
+	    
+;Caso unidad:	    
+	    MOVLW	0X0D
+	    XORWF	CONT_TEMP_LCD,W
+	    BTFSC	STATUS,Z
+	    GOTO	UNIDAD
+	    
+;**********************************************************************
+;********************************* CENTENA ****************************
+CENTENA	    MOVF	CONT_TECL,W
+	    MOVWF	CENTE		;Guarde el contenido binario en Cente 
+	    MOVLW	0X02
+	    SUBWF	CENTE,W		;CENTE-2
+	    BTFSS	STATUS,C	;Cente es mayor o igual a 2? C: 1 positivo (cente >= 2)
+	    
+	    GOTO	CENTEMEN2
+	    
+	    GOTO	CENTEMAY2	 ;Mayor o igual   
+	    
+CENTEMAY2   MOVLW	0X02		  ;La centena es mayor o igual a 2  
+	    MOVWF	CENTE	
+
+	    MOVLW	.20
+	    MOVWF	AUXNUMUSU
+	    MOVLW	.10    
+CARGO200    ADDWF	NUMUSU,F
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGO200    
+	    RETURN
+	    
+CENTEMEN2   MOVLW	.1
+	    MOVWF	AUXNUMUSU	;La centena es menor a 2
+	    XORWF	CENTE,W
+	    BTFSC	STATUS,Z	;CENTE = 1?
+	    GOTO		CENTE1	   
+	    RETURN			;CENTE = 0 NO HACE NADA
+	    
+CENTE1	    MOVLW	.10
+	    MOVWF	AUXNUMUSU   ;cente = a 10
+CARGO100    ADDWF	NUMUSU,F    ;Sumo 10
+	    DECFSZ	AUXNUMUSU,F 
+	    GOTO	CARGO100  
+	    RETURN
+	    
+;************************ DECENA **************************************
+DECENA	    MOVF	CONT_TECL,W
+	    MOVWF	DECE_TEC
+	    MOVLW	.2
+	    SUBWF	CENTE,W
+	    BTFSC	STATUS,Z
+	    GOTO	CENTEIGUAL2
+	    GOTO	CENTEMENOR2
+	        
+CENTEIGUAL2
+	    MOVLW	0X05
+	    SUBWF	DECE_TEC,W		;DECE-5
+	    BTFSC	STATUS,C	;DECE es mayor o igual a 5? C: 1 positivo (DECE >= 5)
+	    
+	    GOTO	PONGO5
+	    GOTO	MENOR5
+
+CENTEMENOR2	
+	    MOVLW	.9
+	    SUBWF	DECE_TEC,W		;DECE-9
+	    BTFSC	STATUS,C	;DECE ES MAYOR O IGUAL A 9?
+	    GOTO	PONGO9
+	    GOTO	MENOR9
+	    
+PONGO5	    MOVLW	.5
+	    MOVWF	DECE_TEC
+	    MOVWF	AUXNUMUSU
+	    MOVLW	.10
+CARGO50	    ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGO50
+	    MOVF	DECE_TEC,W
+	    RETURN
+	    
+MENOR5	    MOVLW	.4
+	    MOVWF	AUXNUMUSU
+DECREM	    MOVF	AUXNUMUSU,W
+	    XORWF	DECE_TEC,W
+	    BTFSC	STATUS,Z  ;RESTO DECE Y AUXNUMUSU SI Z=0 DECREAUX0
+	    GOTO	NODECRE
+	    GOTO	DECREAUX0
+	    
+DECREAUX0  
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	DECREM
+	    
+	    
+NODECRE	    MOVF	AUXNUMUSU,W
+	    MOVWF	DECE_TEC
+	    MOVLW	.10
+CARGOMEN5   ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGOMEN5
+    	    MOVF	DECE_TEC,W
+
+	    RETURN
+	    
+PONGO9	    MOVLW	.9
+	    MOVWF	DECE_TEC
+	    MOVWF	AUXNUMUSU
+	    MOVLW	.10
+CARGO90	    ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGO90
+    	    MOVF	DECE_TEC,W
+
+	    RETURN
+	    
+MENOR9	    MOVLW	.8
+	    MOVWF	AUXNUMUSU
+	    
+DECR	    MOVF	AUXNUMUSU,W
+	    XORWF	DECE_TEC,W
+	    BTFSC	STATUS,Z  ;RESTO DECE Y AUXNUMUSU SI Z=0 DECREAUX0
+	    GOTO	NODEC
+	    GOTO	DECREAUX1
+	    
+DECREAUX1  
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	DECR
+  	    MOVF	DECE_TEC,W
+
+	    RETURN
+	    
+NODEC	    MOVLW	.10
+CARGOMEN9   ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGOMEN9
+    	    MOVF	DECE_TEC,W
+
+	    RETURN
+	    
+;*********************** UNIDAD ***************************************
+UNIDAD	    MOVF	CONT_TECL,W
+	    MOVWF	UNID_TEC
+	    MOVLW	.2
+	    XORWF	CENTE,W
+	    BTFSC	STATUS,Z
+	    GOTO	CENTEIG2
+	    GOTO	CENTEM2    	    
+
+CENTEIG2    MOVLW	0X05
+	    XORWF	DECE_TEC,W		;DECE-5
+	    BTFSS	STATUS,Z	;DECE es igual a 5?	    
+	    GOTO	DECMENO5   
+	    GOTO	DECIGU5
+	    
+DECIGU5	    MOVLW	.5		;DECENA igual a 5
+	    SUBWF	UNID_TEC,W		;UNID-5
+	    BTFSC	STATUS,C	;UNIDAD MAYOR O IGUAL A 5 C = 1
+	    GOTO	UNITY5
+	    GOTO	UNITYNO5	    
+	    
+UNITY5	    MOVLW	.5
+	    MOVWF	UNID_TEC
+	    MOVWF	AUXNUMUSU
+	    MOVLW	.1
+CARGOM5	    ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGOM5
+	    MOVF	UNID_TEC,W
+
+	    RETURN
+	    
+UNITYNO5   MOVLW	.4
+CARGM4	    MOVWF	AUXNUMUSU
+	    XORWF	UNID_TEC,W ;UNID-W
+	    BTFSC	STATUS,Z
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	CARGM4
+	    GOTO	IGUALES4 
+	    
+IGUALES4   MOVLW	.1
+	    ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU,F
+	    GOTO	IGUALES4
+	    MOVF	UNID_TEC,W
+
+	    RETURN
+	    
+DECMENO5    MOVLW	.9
+	    ;MOVWF	AUXNUMUSU
+	    SUBWF	UNID_TEC,W ;UNID-W
+	    BTFSS	STATUS,C;UNIDAD MAYOR O IGUAL 9 C=1
+	    GOTO	CARGM9
+	    GOTO	IGUALES9
+
+IGUALES9   MOVLW	.9
+	    MOVWF	AUXNUMUSU
+	    MOVWF	UNID_TEC
+	    MOVLW	.1	
+CARGADE9   ADDWF	NUMUSU
+	    DECFSZ	AUXNUMUSU
+	    GOTO	CARGADE9
+	    MOVF	UNID_TEC,W
+    
+	    RETURN  
+    
+CARGM9	    MOVLW	.9
+	    MOVWF	AUXNUMUSU
+PREG	    MOVF	AUXNUMUSU,W
+	    XORWF	UNID_TEC,W;SUBWF	UNID_TEC
+	    BTFSS	STATUS,Z;C=1?
+	    GOTO	DECREMEAUX
+	    GOTO    	YAESTA
+	    
+	    
+DECREMEAUX  DECF	AUXNUMUSU,F
+	    GOTO	PREG	
+	    
+YAESTA	    MOVWF	AUXNUMUSU
+	    MOVLW	0X00
+	    XORWF	UNID_TEC,W
+	    BTFSS	STATUS,Z
+	    GOTO	NOES0
+    	    MOVF	UNID_TEC,W
+	    RETURN
+	   
+NOES0
+	    MOVLW	.1
+	    ADDWF	NUMUSU,F
+	    DECFSZ	AUXNUMUSU
+	    GOTO	NOES0
+    	    MOVF	UNID_TEC,W
+
+	    RETURN	           
+
+CENTEM2	    GOTO	DECMENO5
+
+;*********************** END ****************************************
