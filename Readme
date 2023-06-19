@@ -7,12 +7,5 @@ Estos valores tambien será mostrados por computadora y se graficara como esta v
 
                                                                 INCONVENIENTES HASTA AHORA:
 
-Bueno hasta ahora tenemos los siguientes problemas:
-* Debemos solucionar el problema de que los números que se imprimen por teclado son los correspondientes.
-
-* Debemos definir que tecla es la que la que cuenta y cuales no.
-
-* Una vez que detectemos un cambio por cruce por cero, debemos enviar un PWM dependiendo la comparación.
-
 * Averiguar sobre la transmisión.  
  
