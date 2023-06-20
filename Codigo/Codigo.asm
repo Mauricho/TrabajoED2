@@ -1,12 +1,12 @@
 ; Consigna:
 ; Debe tener conectado un teclado matricial de 4x4 en el puerto B, cuando se apriete cualquier
-; tecla deberá interrumpir y desplegar en la LCD (conectada al puerto C) 
-; el número de la tecla que se está apretando (en hexadecimal)
-; Las cadenas de la LCD serán:
-; "Temp. max: xxx°C"
-; "Temp.:        °C"
-; Deberá desplegar la temperatura utilizando el sensor LM35 con una resolución de 0,25 °C,
-; la entrada del sensor será RE2/AN7
+; tecla deberÃ¡ interrumpir y desplegar en la LCD (conectada al puerto C) 
+; el nÃºmero de la tecla que se estÃ¡ apretando (en hexadecimal)
+; Las cadenas de la LCD serÃ¡n:
+; "Temp. max: xxxÂ°C"
+; "Temp.:        Â°C"
+; DeberÃ¡ desplegar la temperatura utilizando el sensor LM35 con una resoluciÃ³n de 0,25 Â°C,
+; la entrada del sensor serÃ¡ RE2/AN7
 ; Al detectar un pulso por el puerto RB0 (en este caso) por el RC2 saco un pulso, comparando la
 ; temperatura del sensor y la seteada por el usuario.	    
 	    
@@ -19,15 +19,15 @@
 	    __config 0x2007,23E4
 	    __config 0x2008,3FFF
 	    
-	    ORG 		0X0000	;Grabado a partir de la dirección 0000
+	    ORG 		0X0000	;Grabado a partir de la direcciÃ³n 0000
 	    
 	    GOTO		INICIO
 	    
-	    ORG			0X0004  ;Grabado a partir de la dirección 0004
+	    ORG			0X0004  ;Grabado a partir de la direcciÃ³n 0004
 	    
 	    include <Rescate.inc>
 	    
-	    GOTO		RSI	;Salto a la subrutina de Servicio de Interrupción
+	    GOTO		RSI	;Salto a la subrutina de Servicio de InterrupciÃ³n
 
 	    LCD_MACRO		;Tabla para LCD
 	    TABLATECL		;Tabla para el teclado matricial 4x4 
@@ -42,7 +42,7 @@ INICIO	    CLRF 		PORTA
 	    BSF			STATUS,RP0
 	    BSF			STATUS,RP1  ;Bank3
 	
-	    MOVLW		B'10001000' ;Entrada analógica por AN7 y AN3 (VREF+)
+	    MOVLW		B'10001000' ;Entrada analÃ³gica por AN7 y AN3 (VREF+)
 	    MOVWF 		ANSEL
 	    CLRF		ANSELH
 	    
@@ -50,7 +50,7 @@ INICIO	    CLRF 		PORTA
 	    
 ;Parte alta de B como entrada para el teclado y RB0 para  detectar el cruce por cero
 	    MOVLW		B'11110000'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
-	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación  
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevaciÃ³n  
 	    
 	    MOVLW		B'11001111'
 	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 para Control plancha (al czo esta apagado)
@@ -58,7 +58,7 @@ INICIO	    CLRF 		PORTA
 	    
 ;**********************************************************************
 ;   Configuramos el Timer0 con Option_Reg, nos sirve para el teclado, TMR0 y RB0/INT
-	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de máquina, flancos de bajada, prescaler: 1:64 
+	    MOVLW		B'01010101' ;Activo RBPU, RB0/INT flancos de subida, TMR0 cuenta ciclos de mÃ¡quina, flancos de bajada, prescaler: 1:64 
 	    MOVWF		OPTION_REG
 	    
 	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
@@ -76,30 +76,30 @@ INICIO	    CLRF 		PORTA
 ;Variables:	    
 	    CLRF		CONT_T0		; Limpiamos el registro que utiliza TMR0
 	    
-	    MOVLW		0X0B		;La primera dirección donde se muestra el numero es la LCD es 0x0B    
+	    MOVLW		0X0B		;La primera direcciÃ³n donde se muestra el numero es la LCD es 0x0B    
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 ;**********************************************************************
-;Configuración del TMR0: Cada 0.124 [S] estoy interrumpiendo
+;ConfiguraciÃ³n del TMR0: Cada 0.124 [S] estoy interrumpiendo
 	    MOVLW		.131	      ;Timer cuenta a 125 * 64 prescaler = 8000
-	    MOVWF		TMR0	      ;256-125=131, el número que nosotros queremos es 125!
+	    MOVWF		TMR0	      ;256-125=131, el nÃºmero que nosotros queremos es 125!
 	    
 	    MOVLW		.62	      ;Lo cambie para que sean 500000 de ciclos
 	    MOVWF		CONT5	      ;Contador cargado con 62
 ;Tiempo Muestreo = 125 * 64 (prescaler) * 62 = 496000 (aprox. 500000)
 ;	      256 - 125 = 131 (TMR0, lo que se debe cargar) 
 ;**********************************************************************
-	    MOVLW		B'11011101'  ; Reloj ADC = RC interno, canal analógico = AN7(Fuente de tensión), no inicia, AD encendido
+	    MOVLW		B'11011101'  ; Reloj ADC = RC interno, canal analÃ³gico = AN7(Fuente de tensiÃ³n), no inicia, AD encendido
 	    MOVWF		ADCON0
 	    
 ; Necesitamos guardar el valor de los puertos
 	    MOVF		PORTB,W		;Estamos leyendo el puerto
 	  
-;   Damos los permisos de interrupción	    	    
+;   Damos los permisos de interrupciÃ³n	    	    
 ;   Recordar: se debe leer el puerto B antes de bajar la bandera RBIF	    
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    BSF			INTCON,RBIE ;Habilitamos las interrupciones por el puertoB
 	    
-;	    BCF			INTCON,INTF ;Bajamos la bandera de interrupción por RB0/INT
+;	    BCF			INTCON,INTF ;Bajamos la bandera de interrupciÃ³n por RB0/INT
 ;	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0   
 	    
 	    BCF			INTCON,T0IF ;Bajamos la bandera de TMR0 antes de dar los permisos
@@ -108,30 +108,29 @@ INICIO	    CLRF 		PORTA
 	    BSF			INTCON,GIE  ;Habilitamos las interrupciones globales
 	    
 ;***********************Programa Principal*****************************    
-;	    MOVLW		0X64
-;	    MOVWF		NUMUSU
+
 	    
 	    GOTO		    $	     ;El programa principal no esta haciendo nada por el momento
-;*******************Rutina Servicio Interrupción***********************    
+;*******************Rutina Servicio InterrupciÃ³n***********************    
 RSI	    
 	    BTFSC		INTCON,INTF
-	    GOTO		FUE_RB0	    ;Solución por interrupcion en RB0/INT	    
+	    GOTO		FUE_RB0	    ;SoluciÃ³n por interrupcion en RB0/INT	    
 	    
 	    BTFSS		INTCON,T0IF	 
-	    GOTO		FUE_INT_CH    ;Solución por interrupcion a causa del teclado 
+	    GOTO		FUE_INT_CH    ;SoluciÃ³n por interrupcion a causa del teclado 
 
-; Interrupción del TMR0	    
+; InterrupciÃ³n del TMR0	    
 	    DECFSZ		CONT5,F
 	    GOTO		BAJA_BANDERA	;Bajo la bandera hasta cumplir los 62 veces
 	    
-	    BSF			ADCON0,1	;Inicia la Conversión Analógica Digital
+	    BSF			ADCON0,1	;Inicia la ConversiÃ³n AnalÃ³gica Digital
 	    
 	    MOVLW		.62
 	    MOVWF		CONT5		;Vuelvo a cargar CONT5 con 62
 	    
-	    INCF		CONT_T0		;Ver esta instrucción!!!!
+	    INCF		CONT_T0		;Ver esta instrucciÃ³n!!!!
 	    
-	    BTFSC		ADCON0,1	;Ya termino la Conversión Analógica Digital?
+	    BTFSC		ADCON0,1	;Ya termino la ConversiÃ³n AnalÃ³gica Digital?
 	    GOTO		$-1
 	    
 	    MOVF		ADRESH,W    ;El resultado del ADC lo paso a W 
@@ -142,7 +141,7 @@ RSI
 	    MOVLW		0X48	    ;Donde queremos imprimir se lo pasamos al registro DIR_LCD
 	    MOVWF		DIR_LCD
 	    
-	    CALL		IMPRIM_NUM ;Imprime la parte alta del resultado de la Conversión A-D
+	    CALL		IMPRIM_NUM ;Imprime la parte alta del resultado de la ConversiÃ³n A-D
 	    
 	    BSF			STATUS,RP0  ; Bank1
 	    
@@ -209,13 +208,13 @@ LM35FUE11
 	    
 ;Acomodo de nuevo la bandera del TMR0
 BAJA_BANDERA	    MOVLW		.131	      ; Timer cuenta a 125 * 264 prescaler = 8000
-		    MOVWF		TMR0	      ; 256-250=6, el número que nosotros queremos es 250!
+		    MOVWF		TMR0	      ; 256-250=6, el nÃºmero que nosotros queremos es 250!
 	    
-		    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
+		    BCF			INTCON,T0IF  ; Bajo la bandera de interrupciÃ³n del Timer0
 	    
-		    GOTO		REGRESA_INT  ; Regreso de la interrupción	    
+		    GOTO		REGRESA_INT  ; Regreso de la interrupciÃ³n	    
 
-;Interrupción por teclado:	    
+;InterrupciÃ³n por teclado:	    
 FUE_INT_CH
 	    CALL		T25MS	    ;Se debe dar tiempo para que lea los puertos pero tampoco tanto
 	    CALL		T25MS				    ;perjudica el comportamiento del programa
@@ -228,16 +227,16 @@ FUE_INT_CH
 	    
 	    BSF			STATUS,RP0  ;Banco1
 	    
-	    MOVLW		B'11000000' ;Al apretar el botón coloco el RD7,RD6 como entrada 
+	    MOVLW		B'11000000' ;Al apretar el botÃ³n coloco el RD7,RD6 como entrada 
 	    MOVWF		TRISD	    
 	    
-	    MOVLW		B'11111111' ;Al apretar el botón coloco el RC5,RC4 como entrada 
+	    MOVLW		B'11111111' ;Al apretar el botÃ³n coloco el RC5,RC4 como entrada 
 	    MOVWF		TRISC
 	    
 	    MOVLW		B'00000000' ;Coloco la parte alta de B como salida, y la parte baja tambien para que no entre ruido
 	    MOVWF		TRISB	       
 	    
-	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevaciÃ³n
 	    			    
 	    BCF			STATUS,RP0   ;Banco0
 	    
@@ -259,7 +258,7 @@ BUSCA_TECLA
 	    CALL		TABLA_TECL
 	    XORWF		TECLADO4X4,W	;Pregunto por cada valor de la tabla para ver si es el que se apreto en el teclado
 	    
-	    BTFSC		STATUS,Z  ;Lo hacemos para que recorra todas las teclas y encuentre algún resultado
+	    BTFSC		STATUS,Z  ;Lo hacemos para que recorra todas las teclas y encuentre algÃºn resultado
 	    GOTO		DIRECC_IMPR
 	    INCF		CONT_TECL,F
 	    MOVLW		.16		;Se va a repetir de acuerdo a la cantidad de teclas
@@ -271,7 +270,7 @@ BUSCA_TECLA
 	    MOVWF		CONT_TECL
 	    
 DIRECC_IMPR	   		    
-	    MOVF		CONT_TEMP_LCD,W ;Movemos el contenido cont-temp-lcd a W, es la dirección a mostrar en la LCD
+	    MOVF		CONT_TEMP_LCD,W ;Movemos el contenido cont-temp-lcd a W, es la direcciÃ³n a mostrar en la LCD
 	    MOVWF		DIR_LCD
 	    CALL		DIRECCION_DDRAM
 	    
@@ -280,7 +279,7 @@ DIRECC_IMPR
 	    CALL		TABLA_HEX_ASCII
 	    CALL		CARACTER
 	    
-;Pregunto RD7,RD6,RC5,RC4 es cero entonces se dejo de apretar el botón	    
+;Pregunto RD7,RD6,RC5,RC4 es cero entonces se dejo de apretar el botÃ³n	    
 	    BTFSC		PORTC,RC4 ;De esta forma evito que entre permanentemente
 	    GOTO		$-1
 	    BTFSC		PORTC,RC5 ;al caso prohibido de forma permanente
@@ -302,16 +301,16 @@ DIRECC_IMPR
 OFF_RB0	    BSF			STATUS,RP0	;Banco 1
 	    
 	    MOVLW		B'11110000' ;La parte alta del puerto B es entrada para el teclado 
-	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11001111'
 	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 apagado control plancha
 	    CLRF		TRISD	    ;El puerto D es saliente por el teclado y LCD	 
 	    
-	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
-	    MOVWF		WPUB	     ;Probar eliminando esta línea y la anterior	    
+	    MOVWF		WPUB	     ;Probar eliminando esta lÃ­nea y la anterior	    
 ;Deshabilitamos RB0 ************************	     
 	    BCF			INTCON,INTE ;Deshabilitamos las interrupciones por RB0	    
 	    
@@ -322,31 +321,31 @@ OFF_RB0	    BSF			STATUS,RP0	;Banco 1
 ON_RB0	    BSF			STATUS,RP0  ;Banco 1
 	    
 	    MOVLW		B'11110001'	    ;La parte alta del puerto B es entrada 	para el teclado y RB0 para detectar el cruce por cero
-	    MOVWF		TRISB		    ;Debo modificar antes al TRISB que las resistencia de elevación
+	    MOVWF		TRISB		    ;Debo modificar antes al TRISB que las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11001011'
 	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 prendido control plancha
 	    CLRF		TRISD	     ;El puerto D es saliente por el teclado y LCD
 	    
-	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11110001' ;Activamos las resistencias del teclado y RB0
 	    MOVWF		WPUB	    
 ;Habilitamos RB0 ******************************************************	    
-	    BCF			INTCON,INTF;1° Bajamos la bandera y despues habilitamos RB0
+	    BCF			INTCON,INTF;1Â° Bajamos la bandera y despues habilitamos RB0
 	    BSF			INTCON,INTE ;Habilitamos las interrupciones por RB0 
 	    
 	    BCF			STATUS,RP0   ;Banco 0	   
 	    
 SALTA_ON_RB0	    
 	    CLRF		PORTD		;Creo q se puede sacar
-	    CLRF		PORTC		;Probar sacando estas dos líneas
+	    CLRF		PORTC		;Probar sacando estas dos lÃ­neas
 	    
-	    INCF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
+	    INCF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la prÃ³xima direcciÃ³n
 	    MOVLW		0X0E		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
 	    XORWF		CONT_TEMP_LCD,W
 	    BTFSS		STATUS,Z
-	    GOTO		IMP_NEXT_DIR	    ;Imprimimos en la próxima dirección de la LCD
+	    GOTO		IMP_NEXT_DIR	    ;Imprimimos en la prÃ³xima direcciÃ³n de la LCD
 	    
 	    MOVLW		0X0B		
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
@@ -359,31 +358,31 @@ IMP_NEXT_DIR
 ;	    ; Acomodo la bandera del RB0
 	    BCF			INTCON,INTF ;Bajamos la bandera
 	    
-	    GOTO		REGRESA_INT  ; Regreso de la interrupción del teclado
+	    GOTO		REGRESA_INT  ; Regreso de la interrupciÃ³n del teclado
 	    
 
-;Interrupción por RB0:    
+;InterrupciÃ³n por RB0:    
 FUE_RB0	    
 	    MOVF		NUMUSU,W	;Controlo si la temperatura digitada es mayor o igual que la que se senso		
 	    SUBWF		TEMPSEN,W	;TEMPSEN-NUMUSU
 	    BTFSC		STATUS,C	;Si: NUMUSU > TEMPSEN la temperatura sigue subiendo
 	    
-	    GOTO		OFF_PWM		;Deshabilitamos las interrupciones por RB0/INT, se deshabilita para la pr?oxima interrupción
+	    GOTO		OFF_PWM		;Deshabilitamos las interrupciones por RB0/INT, se deshabilita para la pr?oxima interrupciÃ³n
 	    GOTO		ON_PWM      ;NUMUSU > TEPSEN
 ;**********************************************************************	    
 OFF_PWM	
 	    BSF			STATUS,RP0	;Banco 1
 	    
 	    MOVLW		B'11110000' ;La parte alta del puerto B es entrada para el teclado 
-	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevación
+	    MOVWF		TRISB	     ;Debo modificar antes al TRISB que las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11001111'
 	    MOVWF		TRISC	     ;Puerto C bit 4 y 5 salidas para el teclado, bit 2 apagado control plancha 
 	    
-	    BCF			OPTION_REG,7 ;Activo las resistencia de elevación
+	    BCF			OPTION_REG,7 ;Activo las resistencia de elevaciÃ³n
 	    
 	    MOVLW		B'11110000' ;Solo activamos las resistencias del teclado
-	    MOVWF		WPUB	     ;Probar eliminando esta línea y la anterior	    
+	    MOVWF		WPUB	     ;Probar eliminando esta lÃ­nea y la anterior	    
 ;Deshabilitamos RB0 ************************	     
 	    BCF			INTCON,INTE ;Deshabilitamos las interrupciones por RB0	    
 	    
@@ -402,13 +401,13 @@ ON_PWM
 ; Acomodo la bandera del RB0
 	    BCF			INTCON,INTF ;Bajamos la bandera
 
-; Acomodo la bandera del teclado (ver de cambiar esto último)
+; Acomodo la bandera del teclado (ver de cambiar esto Ãºltimo)
 	    MOVF		PORTB,W    ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 
-;	    BCF			INTCON,T0IF  ; Bajo la bandera de interrupción del Timer0
+;	    BCF			INTCON,T0IF  ; Bajo la bandera de interrupciÃ³n del Timer0
 	    
-;	    GOTO		REGRESA_INT  ; Regreso de la interrupción del RB0
+;	    GOTO		REGRESA_INT  ; Regreso de la interrupciÃ³n del RB0
 ;	    
 
 	    
