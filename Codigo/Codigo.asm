@@ -128,7 +128,7 @@ RSI
 	    MOVLW		.62
 	    MOVWF		CONT5		;Vuelvo a cargar CONT5 con 62
 	    
-	    INCF		CONT_T0		;Ver esta instrucción!!!!
+	    INCF		CONT_T0	
 	    
 	    BTFSC		ADCON0,1	;Ya termino la Conversión Analógica Digital?
 	    GOTO		$-1
@@ -275,7 +275,7 @@ DIRECC_IMPR
 	    CALL		DIRECCION_DDRAM
 	    
 	    MOVF		CONT_TECL,W	;Pasamos lo que encontramos a W 
-	    CALL		CORRECT_TECL	;!Corregimos la tecla!
+	    CALL		CORRECT_TECL	;Corregimos la tecla
 	    CALL		TABLA_HEX_ASCII
 	    CALL		CARACTER
 	    
@@ -338,8 +338,8 @@ ON_RB0	    BSF			STATUS,RP0  ;Banco 1
 	    BCF			STATUS,RP0   ;Banco 0	   
 	    
 SALTA_ON_RB0	    
-	    CLRF		PORTD		;Creo q se puede sacar
-	    CLRF		PORTC		;Probar sacando estas dos líneas
+	    CLRF		PORTD		
+	    CLRF		PORTC		
 	    
 	    INCF		CONT_TEMP_LCD,F ;Incrementamos el registro para que imprima en la próxima dirección
 	    MOVLW		0X0E		  ;Si el resultado llego a 0x0A lo volvemos a cargar con 0x0D
@@ -350,12 +350,10 @@ SALTA_ON_RB0
 	    MOVLW		0X0B		
 	    MOVWF		CONT_TEMP_LCD	;Cargo el contador para mostrar en la LCD en las posiciones indicadas: 0X0B 0X0C 0X0D
 	    
-; Acomodo la bandera del teclado	    
 IMP_NEXT_DIR	    
 	    MOVF		PORTB,W      ;Recordar: se debe leer el puerto B antes de bajar la bandera RBIF
 	    BCF			INTCON,RBIF ;Bajamos la bandera antes de dar los permisos
 	    
-;	    ; Acomodo la bandera del RB0
 	    BCF			INTCON,INTF ;Bajamos la bandera
 	    
 	    GOTO		REGRESA_INT  ; Regreso de la interrupción del teclado
